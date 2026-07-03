@@ -33,7 +33,7 @@ function Library:CreateWindow(Options)
     ------------------------------------------------
 
     local Header = Instance.new("Frame")
-    Header.Size = UDim2.new(1,0,0,18)
+    Header.Size = UDim2.fromOffset(260,18)
     Header.BackgroundColor3 = Color3.fromRGB(235,48,97)
     Header.BorderSizePixel = 0
     Header.Parent = Main
@@ -43,30 +43,46 @@ function Library:CreateWindow(Options)
     ------------------------------------------------
 
     local Minimize = Instance.new("TextButton")
+    Minimize.Name = "Minimize"
     Minimize.Size = UDim2.fromOffset(18,18)
     Minimize.Position = UDim2.fromOffset(0,0)
     Minimize.BackgroundTransparency = 1
     Minimize.BorderSizePixel = 0
+    Minimize.Text = ">"
     Minimize.Font = Enum.Font.ArialBold
-    Minimize.Text = "−"
-    Minimize.TextColor3 = Color3.new(1,1,1)
     Minimize.TextSize = 10
+    Minimize.TextColor3 = Color3.new(1,1,1)
+    Minimize.Rotation = 90 -- Expanded
     Minimize.Parent = Header
+
+    local TweenService = game:GetService("TweenService")
+    local Open = true
+
+    Minimize.MouseButton1Click:Connect(function()
+        Open = not Open
+
+        TweenService:Create(
+            Minimize,
+            TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                Rotation = Open and 90 or 0
+            }
+        ):Play()
+
+    -- Collapse/expand body here
+end)
 
     ------------------------------------------------
     -- Title
     ------------------------------------------------
 
-    local Title = Instance.new("TextLabel")
     Title.BackgroundTransparency = 1
-    Title.Position = UDim2.fromOffset(18,0)
     Title.Size = UDim2.new(1,-36,1,0)
-    Title.Font = Enum.Font.ArialBold
-    Title.Text = Options.Name or "Mega Hack"
-    Title.TextColor3 = Color3.new(1,1,1)
+    Title.Position = UDim2.fromOffset(18,0)
     Title.TextSize = 10
+    Title.Font = Enum.Font.ArialBold
     Title.TextXAlignment = Enum.TextXAlignment.Center
-    Title.Parent = Header
+    Title.TextYAlignment = Enum.TextYAlignment.Center
 
     ------------------------------------------------
     -- Body
@@ -74,10 +90,18 @@ function Library:CreateWindow(Options)
 
     local Body = Instance.new("Frame")
     Body.Position = UDim2.fromOffset(0,18)
-    Body.Size = UDim2.new(1,0,1,-18)
-    Body.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    Body.Size = UDim2.fromOffset(260,0)
+    Body.BackgroundColor3 = Color3.fromRGB(30,30,30)
     Body.BorderSizePixel = 0
     Body.Parent = Main
+    Body.ClipsDescendants = true
+    Body:TweenSize(
+        UDim2.fromOffset(260,ContentHeight),
+        Enum.EasingDirection.Out,
+        Enum.EasingStyle.Quad,
+        .15,
+        true
+    )
 
     ------------------------------------------------
     -- Column Holder
@@ -165,7 +189,25 @@ function Library:CreateWindow(Options)
         end
 
     end)
+    
 
+    ------------------------------------------------
+    -- Layout
+    ------------------------------------------------
+
+    local Layout = Instance.new("UIListLayout")
+    Layout.Padding = UDim.new(0,2)
+    Layout.Parent = Body
+    Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+
+        ContentHeight = Layout.AbsoluteContentSize.Y
+
+    end)
+
+    ------------------------------------------------
+    -- Button
+    ------------------------------------------------
+    
     ------------------------------------------------
     -- Window API
     ------------------------------------------------
