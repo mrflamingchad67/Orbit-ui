@@ -1,117 +1,186 @@
 local Library = {}
 Library.__index = Library
 
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
-local UserInputService = game:GetService("UserInputService")
 
-function Library:CreateWindow(options)
-	local windowTitle = options.Name or "Mega Hack"
-	
-	-- Main Screen Container
-	local screenGui = Instance.new("ScreenGui")
-	screenGui.Name = HttpService:GenerateGUID(false)
-	screenGui.ResetOnSpawn = false
-	screenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-	
-	-- Header Topbar Frame (Width trimmed down to 260px)
-	local headerFrame = Instance.new("Frame")
-	headerFrame.Name = "HeaderFrame"
-	headerFrame.Size = UDim2.new(0, 260, 0, 32) 
-	headerFrame.Position = UDim2.new(0.5, -130, 0.4, -15) 
-	headerFrame.BackgroundColor3 = Color3.fromRGB(235, 48, 97) 
-	headerFrame.BorderSizePixel = 0
-	headerFrame.ZIndex = 2
-	headerFrame.Parent = screenGui
-	
-	-- Dragging Logic Engine (Makes the full panel draggable smoothly)
-	local dragging, dragInput, dragStart, startPos
-	headerFrame.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-			dragStart = input.Position
-			startPos = headerFrame.Position
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then dragging = false end
-			end)
-		end
-	end)
-	headerFrame.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseBehavior then dragInput = input end
-	end)
-	UserInputService.InputChanged:Connect(function(input)
-		if input == dragInput and dragging then
-			local delta = input.Position - dragStart
-			headerFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-		end
-	end)
+function Library:CreateWindow(Options)
 
-	-- Window Title Label (Perfect Auto-Center Layout using Scale 1)
-	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Name = "Title"
-	titleLabel.Size = UDim2.new(1, 0, 1, 0) -- Fills the width so any width change auto-centers text automatically
-	titleLabel.Position = UDim2.new(0, 0, 0, 0)
-	titleLabel.BackgroundTransparency = 1
-	titleLabel.Text = windowTitle
-	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	titleLabel.TextSize = 20
-	titleLabel.Font = Enum.Font.ArialBold
-	titleLabel.TextXAlignment = Enum.TextXAlignment.Center 
-	titleLabel.TextYAlignment = Enum.TextYAlignment.Center 
-	titleLabel.ZIndex = 2 
-	titleLabel.Parent = headerFrame
-	
-	-- Flush-Corner Minimize Button Box (No left margin gaps, instant dark overlay on hover)
-	local minimizeBtn = Instance.new("TextButton")
-	minimizeBtn.Name = "MinimizeButton"
-	minimizeBtn.Size = UDim2.new(0, 40, 1, 0) 
-	minimizeBtn.Position = UDim2.new(0, 0, 0, 0) 
-	minimizeBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
-	minimizeBtn.BackgroundTransparency = 1 
-	minimizeBtn.BorderSizePixel = 0
-	minimizeBtn.Text = "—"
-	minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	minimizeBtn.TextSize = 14 
-	minimizeBtn.Font = Enum.Font.ArialBold
-	minimizeBtn.TextXAlignment = Enum.TextXAlignment.Center 
-	minimizeBtn.TextYAlignment = Enum.TextYAlignment.Center
-	minimizeBtn.ZIndex = 3 
-	minimizeBtn.Parent = headerFrame
-	
-	-- Main Content Background Body Frame (Your Panel Container)
-	local containerFrame = Instance.new("Frame")
-	containerFrame.Name = "ContainerFrame"
-	containerFrame.Size = UDim2.new(1, 0, 0, 150) 
-	containerFrame.Position = UDim2.new(0, 0, 1, 0) 
-	containerFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22) 
-	containerFrame.BorderSizePixel = 0
-	containerFrame.ZIndex = 1
-	containerFrame.Parent = headerFrame
-	
-	-- Automatic Sorting Stack List Layout (Buttons added later will clean-stack automatically)
-	local uiListLayout = Instance.new("UIListLayout")
-	uiListLayout.FillDirection = Enum.FillDirection.Vertical
-	uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	uiListLayout.Padding = UDim.new(0, 6)
-	uiListLayout.Parent = containerFrame
-	
-	-- Spacing padding interior border
-	local uiPadding = Instance.new("UIPadding")
-	uiPadding.PaddingTop = UDim.new(0, 10)
-	uiPadding.Parent = containerFrame
-	
-	-- Toggle Visibility Action Logic
-	local open = true
-	minimizeBtn.MouseEnter:Connect(function() minimizeBtn.BackgroundTransparency = 0.85 end)
-	minimizeBtn.MouseLeave:Connect(function() minimizeBtn.BackgroundTransparency = 1 end)
-	minimizeBtn.MouseButton1Click:Connect(function()
-		open = not open
-		containerFrame.Visible = open
-	end)
-	
-	-- Empty handler ready for your future function extensions!
-	local WindowHandler = {}
-	return WindowHandler
+    local Window = {}
+    Window.Columns = {}
+
+    local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+    local Gui = Instance.new("ScreenGui")
+    Gui.Name = HttpService:GenerateGUID(false)
+    Gui.ResetOnSpawn = false
+    Gui.Parent = PlayerGui
+
+    ------------------------------------------------
+    -- Main
+    ------------------------------------------------
+
+    local Main = Instance.new("Frame")
+    Main.Size = UDim2.fromOffset(1200,650)
+    Main.Position = UDim2.new(.5,-600,.5,-325)
+    Main.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    Main.BorderSizePixel = 0
+    Main.Parent = Gui
+
+    ------------------------------------------------
+    -- Header
+    ------------------------------------------------
+
+    local Header = Instance.new("Frame")
+    Header.Size = UDim2.new(1,0,0,18)
+    Header.BackgroundColor3 = Color3.fromRGB(235,48,97)
+    Header.BorderSizePixel = 0
+    Header.Parent = Main
+
+    ------------------------------------------------
+    -- Minimize
+    ------------------------------------------------
+
+    local Minimize = Instance.new("TextButton")
+    Minimize.Size = UDim2.fromOffset(18,18)
+    Minimize.Position = UDim2.fromOffset(0,0)
+    Minimize.BackgroundTransparency = 1
+    Minimize.BorderSizePixel = 0
+    Minimize.Font = Enum.Font.ArialBold
+    Minimize.Text = "−"
+    Minimize.TextColor3 = Color3.new(1,1,1)
+    Minimize.TextSize = 10
+    Minimize.Parent = Header
+
+    ------------------------------------------------
+    -- Title
+    ------------------------------------------------
+
+    local Title = Instance.new("TextLabel")
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.fromOffset(18,0)
+    Title.Size = UDim2.new(1,-36,1,0)
+    Title.Font = Enum.Font.ArialBold
+    Title.Text = Options.Name or "Mega Hack"
+    Title.TextColor3 = Color3.new(1,1,1)
+    Title.TextSize = 10
+    Title.TextXAlignment = Enum.TextXAlignment.Center
+    Title.Parent = Header
+
+    ------------------------------------------------
+    -- Body
+    ------------------------------------------------
+
+    local Body = Instance.new("Frame")
+    Body.Position = UDim2.fromOffset(0,18)
+    Body.Size = UDim2.new(1,0,1,-18)
+    Body.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    Body.BorderSizePixel = 0
+    Body.Parent = Main
+
+    ------------------------------------------------
+    -- Column Holder
+    ------------------------------------------------
+
+    local Holder = Instance.new("Frame")
+    Holder.BackgroundTransparency = 1
+    Holder.Size = UDim2.new(1,0,1,0)
+    Holder.Parent = Body
+
+    local Layout = Instance.new("UIListLayout")
+    Layout.FillDirection = Enum.FillDirection.Horizontal
+    Layout.Padding = UDim.new(0,2)
+    Layout.SortOrder = Enum.SortOrder.LayoutOrder
+    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    Layout.VerticalAlignment = Enum.VerticalAlignment.Top
+    Layout.Parent = Holder
+
+    ------------------------------------------------
+    -- Dragging
+    ------------------------------------------------
+
+    local Drag
+    local DragStart
+    local StartPos
+
+    Header.InputBegan:Connect(function(Input)
+
+        if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+            Drag = true
+            DragStart = Input.Position
+            StartPos = Main.Position
+
+            Input.Changed:Connect(function()
+
+                if Input.UserInputState == Enum.UserInputState.End then
+
+                    Drag = false
+
+                end
+
+            end)
+
+        end
+
+    end)
+
+    UIS.InputChanged:Connect(function(Input)
+
+        if Drag and Input.UserInputType == Enum.UserInputType.MouseMovement then
+
+            local Delta = Input.Position - DragStart
+
+            Main.Position = UDim2.new(
+
+                StartPos.X.Scale,
+                StartPos.X.Offset + Delta.X,
+
+                StartPos.Y.Scale,
+                StartPos.Y.Offset + Delta.Y
+
+            )
+
+        end
+
+    end)
+
+    ------------------------------------------------
+    -- Minimize
+    ------------------------------------------------
+
+    local Open = true
+
+    Minimize.MouseButton1Click:Connect(function()
+
+        Open = not Open
+
+        Body.Visible = Open
+
+        if Open then
+            Main.Size = UDim2.fromOffset(1200,650)
+        else
+            Main.Size = UDim2.fromOffset(1200,18)
+        end
+
+    end)
+
+    ------------------------------------------------
+    -- Window API
+    ------------------------------------------------
+
+    function Window:AddColumn(Name)
+
+        -- Part 2
+
+    end
+
+    Window.Gui = Gui
+    Window.Holder = Holder
+
+    return Window
+
 end
 
 return Library
