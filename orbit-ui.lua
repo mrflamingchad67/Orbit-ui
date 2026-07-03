@@ -6,28 +6,25 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 
 local function GetHUI()
-	return (gethui and gethui()) or CoreGui
+	return gethui and gethui() or CoreGui
 end
 
-local function CreateInstance(class, props)
-	local instance = Instance.new(class)
+local function Create(class, props)
+	local obj = Instance.new(class)
 	for k, v in pairs(props or {}) do
-		instance[k] = v
+		obj[k] = v
 	end
-	return instance
+	return obj
 end
 
-local function Dragify(frame)
+local function Drag(frame)
 	local dragging, dragInput, dragStart, startPos
-	local function update(input)
-		local delta = input.Position - dragStart
-		frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
 	frame.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			dragging = true
 			dragStart = input.Position
 			startPos = frame.Position
+			
 			input.Changed:Connect(function()
 				if input.UserInputState == Enum.UserInputState.End then
 					dragging = false
@@ -36,490 +33,450 @@ local function Dragify(frame)
 		end
 	end)
 	frame.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement then
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 			dragInput = input
 		end
 	end)
 	UserInputService.InputChanged:Connect(function(input)
-		if input == dragInput and dragging then
-			update(input)
+		if dragging and input == dragInput then
+			local delta = input.Position - dragStart
+			frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 		end
 	end)
 end
 
-function Library:CreateWindow(config)
-	local Window = {
-		Name = config.Name or "Mega Hack",
-		Minimized = false
-	}
-
-	local ScreenGui = CreateInstance("ScreenGui", {
-		Name = "MegaHackLibrary",
-		ResetOnSpawn = false,
-		Parent = GetHUI()
-	})
-
-	local MainFrame = CreateInstance("Frame", {
-		Name = "MainFrame",
-		Size = UDim2.new(0, 1020, 0, 580),
-		Position = UDim2.new(0.5, -510, 0.5, -290),
-		BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+function Library:CreateWindow(cfg)
+	local window = {Minimized = false, Panels = {}}
+	
+	local gui = Create("ScreenGui", {Name = "MegaHack", ResetOnSpawn = false, Parent = GetHUI()})
+	
+	local main = Create("Frame", {
+		Name = "Main",
+		Size = UDim2.new(0, 1040, 0, 560),
+		Position = UDim2.new(0.5, -520, 0.5, -280),
+		BackgroundColor3 = Color3.fromRGB(18, 18, 18),
 		BorderSizePixel = 0,
-		Parent = ScreenGui
+		Parent = gui
 	})
-
-	local TitleBar = CreateInstance("Frame", {
+	
+	local titleBar = Create("Frame", {
 		Name = "TitleBar",
-		Size = UDim2.new(1, 0, 0, 34),
-		BackgroundColor3 = Color3.fromRGB(255, 20, 147),
+		Size = UDim2.new(1, 0, 0, 18),
+		BackgroundColor3 = Color3.fromRGB(235, 48, 97),
 		BorderSizePixel = 0,
-		Parent = MainFrame
+		Parent = main
 	})
-
-	local TitleText = CreateInstance("TextLabel", {
-		Name = "Title",
-		Size = UDim2.new(1, -80, 1, 0),
+	
+	local titleLabel = Create("TextLabel", {
+		Size = UDim2.new(1, -50, 1, 0),
 		BackgroundTransparency = 1,
-		Text = Window.Name,
-		TextColor3 = Color3.new(1, 1, 1),
-		Font = Enum.Font.GothamBold,
-		TextSize = 16,
+		Text = cfg.Name or "Mega Hack",
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		Font = Enum.Font.ArialBold,
+		TextSize = 14,
 		TextXAlignment = Enum.TextXAlignment.Center,
-		Parent = TitleBar
+		Parent = titleBar
 	})
-
-	local MinimizeButton = CreateInstance("TextButton", {
-		Name = "Minimize",
-		Size = UDim2.new(0, 30, 1, 0),
-		Position = UDim2.new(1, -34, 0, 0),
+	
+	local minArrow = Create("TextLabel", {
+		Size = UDim2.new(0, 18, 0, 18),
+		Position = UDim2.new(1, -22, 0, 0),
 		BackgroundTransparency = 1,
 		Text = "▼",
-		TextColor3 = Color3.new(1, 1, 1),
-		Font = Enum.Font.GothamBold,
-		TextSize = 18,
-		Parent = TitleBar
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		Font = Enum.Font.ArialBold,
+		TextSize = 14,
+		Parent = titleBar
 	})
-
-	Dragify(TitleBar)
-
-	local ContentFrame = CreateInstance("Frame", {
+	
+	Drag(titleBar)
+	
+	local content = Create("Frame", {
 		Name = "Content",
-		Size = UDim2.new(1, 0, 1, -34),
-		Position = UDim2.new(0, 0, 0, 34),
-		BackgroundColor3 = Color3.fromRGB(15, 15, 15),
+		Size = UDim2.new(1, 0, 1, -18),
+		Position = UDim2.new(0, 0, 0, 18),
+		BackgroundColor3 = Color3.fromRGB(18, 18, 18),
 		BorderSizePixel = 0,
-		Parent = MainFrame
+		Parent = main
 	})
-
-	local PanelsFolder = CreateInstance("Frame", {
-		Name = "Panels",
+	
+	local panelsContainer = Create("Frame", {
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
-		Parent = ContentFrame
+		Parent = content
 	})
-
-	local PanelsLayout = CreateInstance("UIListLayout", {
+	
+	Create("UIListLayout", {
 		FillDirection = Enum.FillDirection.Horizontal,
-		HorizontalAlignment = Enum.HorizontalAlignment.Left,
-		SortOrder = Enum.SortOrder.LayoutOrder,
 		Padding = UDim.new(0, 2),
-		Parent = PanelsFolder
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = panelsContainer
 	})
-
-	local minimizedSize = nil
-	local originalSize = MainFrame.Size
-
-	MinimizeButton.MouseButton1Click:Connect(function()
-		Window.Minimized = not Window.Minimized
-		if Window.Minimized then
-			minimizedSize = MainFrame.Size
-			TweenService:Create(MinimizeButton, TweenInfo.new(0.2), {Rotation = 180}):Play()
-			TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint), {Size = UDim2.new(0, originalSize.X.Offset, 0, 34)}):Play()
+	
+	local originalContentSize = content.Size
+	
+	minArrow.MouseButton1Click:Connect(function()
+		window.Minimized = not window.Minimized
+		if window.Minimized then
+			TweenService:Create(minArrow, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Rotation = 180}):Play()
+			TweenService:Create(content, TweenInfo.new(0.25, Enum.EasingStyle.Quint), {Size = UDim2.new(1, 0, 0, 0)}):Play()
 		else
-			TweenService:Create(MinimizeButton, TweenInfo.new(0.2), {Rotation = 0}):Play()
-			TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint), {Size = minimizedSize or originalSize}):Play()
+			TweenService:Create(minArrow, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Rotation = 0}):Play()
+			TweenService:Create(content, TweenInfo.new(0.25, Enum.EasingStyle.Quint), {Size = originalContentSize}):Play()
 		end
 	end)
-
-	function Window:CreatePanel(panelConfig)
-		local Panel = {
-			Name = panelConfig.Name or "Panel"
-		}
-
-		local PanelFrame = CreateInstance("Frame", {
-			Name = Panel.Name,
-			Size = UDim2.new(0, 148, 1, 0),
-			BackgroundColor3 = Color3.fromRGB(22, 22, 22),
+	
+	function window:CreatePanel(panelName)
+		local panel = {Name = panelName}
+		table.insert(window.Panels, panel)
+		
+		local panelFrame = Create("Frame", {
+			Size = UDim2.new(0, 136, 1, 0),
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
 			BorderSizePixel = 0,
-			Parent = PanelsFolder,
-			LayoutOrder = #PanelsFolder:GetChildren()
+			Parent = panelsContainer,
+			LayoutOrder = #window.Panels
 		})
-
-		local PanelHeader = CreateInstance("Frame", {
-			Name = "Header",
-			Size = UDim2.new(1, 0, 0, 24),
-			BackgroundColor3 = Color3.fromRGB(220, 20, 140),
+		
+		local panelHeader = Create("Frame", {
+			Size = UDim2.new(1, 0, 0, 18),
+			BackgroundColor3 = Color3.fromRGB(235, 48, 97),
 			BorderSizePixel = 0,
-			Parent = PanelFrame
+			Parent = panelFrame
 		})
-
-		local HeaderText = CreateInstance("TextLabel", {
-			Name = "Title",
-			Size = UDim2.new(1, -20, 1, 0),
-			Position = UDim2.new(0, 6, 0, 0),
+		
+		Create("TextLabel", {
+			Size = UDim2.new(1, -8, 1, 0),
+			Position = UDim2.new(0, 4, 0, 0),
 			BackgroundTransparency = 1,
-			Text = "- " .. Panel.Name,
-			TextColor3 = Color3.new(1, 1, 1),
-			Font = Enum.Font.GothamBold,
-			TextSize = 13,
+			Text = panelName,
+			TextColor3 = Color3.fromRGB(255, 255, 255),
+			Font = Enum.Font.ArialBold,
+			TextSize = 10,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Parent = PanelHeader
+			Parent = panelHeader
 		})
-
-		local ScrollFrame = CreateInstance("ScrollingFrame", {
-			Name = "Scroll",
-			Size = UDim2.new(1, 0, 1, -24),
-			Position = UDim2.new(0, 0, 0, 24),
+		
+		local scroll = Create("ScrollingFrame", {
+			Size = UDim2.new(1, 0, 1, -18),
+			Position = UDim2.new(0, 0, 0, 18),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
-			ScrollBarThickness = 3,
-			ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80),
-			Parent = PanelFrame
+			ScrollBarThickness = 2,
+			ScrollBarImageColor3 = Color3.fromRGB(90, 90, 90),
+			Parent = panelFrame
 		})
-
-		local ScrollLayout = CreateInstance("UIListLayout", {
+		
+		local list = Create("UIListLayout", {
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			Padding = UDim.new(0, 2),
-			Parent = ScrollFrame
+			Parent = scroll
 		})
-
-		local function UpdateCanvas()
-			ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ScrollLayout.AbsoluteContentSize.Y + 4)
+		
+		local function updateScroll()
+			scroll.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 6)
 		end
-
-		ScrollLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateCanvas)
-		UpdateCanvas()
-
-		function Panel:CreateButton(btnConfig)
-			local ButtonObj = {}
-
-			local BtnFrame = CreateInstance("Frame", {
-				Size = UDim2.new(1, 0, 0, 22),
-				BackgroundColor3 = Color3.fromRGB(35, 35, 35),
-				BorderSizePixel = 0,
-				Parent = ScrollFrame
-			})
-
-			local Btn = CreateInstance("TextButton", {
-				Size = UDim2.new(1, 0, 1, 0),
-				BackgroundTransparency = 1,
-				Text = btnConfig.Name or "Button",
-				TextColor3 = Color3.new(1, 1, 1),
-				Font = Enum.Font.GothamSemibold,
-				TextSize = 13,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				Parent = BtnFrame
-			})
-
-			local Padding = CreateInstance("UIPadding", {
-				PaddingLeft = UDim.new(0, 6),
-				Parent = Btn
-			})
-
-			Btn.MouseButton1Click:Connect(function()
-				if btnConfig.Callback then
-					btnConfig.Callback()
-				end
-				Btn.BackgroundTransparency = 0.7
-				wait(0.1)
-				Btn.BackgroundTransparency = 1
-			end)
-
-			return ButtonObj
-		end
-
-		function Panel:CreateToggle(togConfig)
-			local ToggleObj = {Value = togConfig.CurrentValue or false}
-
-			local TogFrame = CreateInstance("Frame", {
-				Size = UDim2.new(1, 0, 0, 22),
-				BackgroundColor3 = Color3.fromRGB(35, 35, 35),
-				BorderSizePixel = 0,
-				Parent = ScrollFrame
-			})
-
-			local TogList = CreateInstance("UIListLayout", {
-				FillDirection = Enum.FillDirection.Horizontal,
-				HorizontalAlignment = Enum.HorizontalAlignment.Left,
-				Padding = UDim.new(0, 6),
-				Parent = TogFrame
-			})
-
-			local Label = CreateInstance("TextLabel", {
-				Size = UDim2.new(1, -32, 1, 0),
-				BackgroundTransparency = 1,
-				Text = togConfig.Name or "Toggle",
-				TextColor3 = Color3.new(1, 1, 1),
-				Font = Enum.Font.GothamSemibold,
-				TextSize = 13,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				Parent = TogFrame
-			})
-
-			local UIPadding = CreateInstance("UIPadding", {PaddingLeft = UDim.new(0, 6), Parent = Label})
-
-			local CheckFrame = CreateInstance("TextButton", {
-				Size = UDim2.new(0, 22, 0, 22),
-				BackgroundColor3 = Color3.fromRGB(50, 50, 50),
-				BorderSizePixel = 0,
-				Text = "",
-				Parent = TogFrame
-			})
-
-			local CheckMark = CreateInstance("TextLabel", {
-				Size = UDim2.new(1, 0, 1, 0),
-				BackgroundTransparency = 1,
-				Text = ToggleObj.Value and "✔" or "",
-				TextColor3 = Color3.fromRGB(0, 255, 100),
-				Font = Enum.Font.GothamBold,
-				TextSize = 16,
-				Parent = CheckFrame
-			})
-
-			local function UpdateToggle()
-				CheckMark.Text = ToggleObj.Value and "✔" or ""
-				if togConfig.Callback then
-					togConfig.Callback(ToggleObj.Value)
-				end
-			end
-
-			CheckFrame.MouseButton1Click:Connect(function()
-				ToggleObj.Value = not ToggleObj.Value
-				UpdateToggle()
-			end)
-
-			UpdateToggle()
-
-			return ToggleObj
-		end
-
-		function Panel:CreateSlider(sliderConfig)
-			local SliderObj = {Value = sliderConfig.CurrentValue or sliderConfig.Range[1]}
-
-			local SliderFrame = CreateInstance("Frame", {
-				Size = UDim2.new(1, 0, 0, 32),
-				BackgroundColor3 = Color3.fromRGB(35, 35, 35),
-				BorderSizePixel = 0,
-				Parent = ScrollFrame
-			})
-
-			local Label = CreateInstance("TextLabel", {
+		list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateScroll)
+		
+		function panel:CreateSection(secName)
+			local secFrame = Create("Frame", {
 				Size = UDim2.new(1, 0, 0, 16),
-				BackgroundTransparency = 1,
-				Text = (sliderConfig.Name or "Slider") .. ": " .. tostring(SliderObj.Value),
-				TextColor3 = Color3.new(1, 1, 1),
-				Font = Enum.Font.GothamSemibold,
-				TextSize = 13,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				Parent = SliderFrame
-			})
-
-			CreateInstance("UIPadding", {PaddingLeft = UDim.new(0, 6), Parent = Label})
-
-			local Bar = CreateInstance("Frame", {
-				Size = UDim2.new(1, -12, 0, 6),
-				Position = UDim2.new(0, 6, 1, -10),
-				BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+				BackgroundColor3 = Color3.fromRGB(200, 30, 100),
 				BorderSizePixel = 0,
-				Parent = SliderFrame
+				Parent = scroll
 			})
-
-			local Fill = CreateInstance("Frame", {
-				Size = UDim2.new(0.5, 0, 1, 0),
-				BackgroundColor3 = Color3.fromRGB(255, 20, 147),
-				BorderSizePixel = 0,
-				Parent = Bar
-			})
-
-			local Knob = CreateInstance("Frame", {
-				Size = UDim2.new(0, 12, 0, 12),
-				Position = UDim2.new(0.5, -6, 0.5, -6),
-				BackgroundColor3 = Color3.new(1, 1, 1),
-				BorderSizePixel = 0,
-				Parent = Bar
-			})
-
-			local function UpdateSlider(percent)
-				percent = math.clamp(percent, 0, 1)
-				Fill.Size = UDim2.new(percent, 0, 1, 0)
-				local val = math.floor(sliderConfig.Range[1] + (sliderConfig.Range[2] - sliderConfig.Range[1]) * percent)
-				SliderObj.Value = val
-				Label.Text = (sliderConfig.Name or "Slider") .. ": " .. tostring(val)
-				if sliderConfig.Callback then
-					sliderConfig.Callback(val)
-				end
-			end
-
-			local draggingSlider = false
-			Bar.InputBegan:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					draggingSlider = true
-					local mousePos = UserInputService:GetMouseLocation()
-					local barPos = Bar.AbsolutePosition
-					local barSize = Bar.AbsoluteSize
-					local percent = (mousePos.X - barPos.X) / barSize.X
-					UpdateSlider(percent)
-				end
-			end)
-
-			UserInputService.InputEnded:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					draggingSlider = false
-				end
-			end)
-
-			UserInputService.InputChanged:Connect(function(input)
-				if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
-					local mousePos = UserInputService:GetMouseLocation()
-					local barPos = Bar.AbsolutePosition
-					local barSize = Bar.AbsoluteSize
-					local percent = math.clamp((mousePos.X - barPos.X) / barSize.X, 0, 1)
-					UpdateSlider(percent)
-				end
-			end)
-
-			-- Initial update
-			local initPercent = (SliderObj.Value - sliderConfig.Range[1]) / (sliderConfig.Range[2] - sliderConfig.Range[1])
-			UpdateSlider(initPercent)
-
-			return SliderObj
-		end
-
-		function Panel:CreateDropdown(dropdownConfig)
-			local DropdownObj = {Current = dropdownConfig.CurrentOption}
-
-			local DropFrame = CreateInstance("Frame", {
-				Size = UDim2.new(1, 0, 0, 22),
-				BackgroundColor3 = Color3.fromRGB(35, 35, 35),
-				BorderSizePixel = 0,
-				Parent = ScrollFrame
-			})
-
-			local DropButton = CreateInstance("TextButton", {
+			Create("TextLabel", {
 				Size = UDim2.new(1, 0, 1, 0),
 				BackgroundTransparency = 1,
-				Text = dropdownConfig.Name .. ": " .. (dropdownConfig.CurrentOption or "Select"),
-				TextColor3 = Color3.new(1, 1, 1),
-				Font = Enum.Font.GothamSemibold,
-				TextSize = 13,
+				Text = "  " .. secName,
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				Font = Enum.Font.ArialBold,
+				TextSize = 9,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				Parent = DropFrame
+				Parent = secFrame
 			})
-
-			CreateInstance("UIPadding", {PaddingLeft = UDim.new(0, 6), Parent = DropButton})
-
-			local OptionsFrame = CreateInstance("Frame", {
-				Size = UDim2.new(1, 0, 0, 0),
-				Position = UDim2.new(0, 0, 1, 2),
+			return secFrame
+		end
+		
+		function panel:CreateButton(btnCfg)
+			local row = Create("Frame", {
+				Size = UDim2.new(1, 0, 0, 16),
 				BackgroundColor3 = Color3.fromRGB(30, 30, 30),
-				BorderSizePixel = 1,
-				BorderColor3 = Color3.fromRGB(80, 80, 80),
-				Visible = false,
-				ZIndex = 10,
-				Parent = DropFrame
+				BorderSizePixel = 0,
+				Parent = scroll
 			})
-
-			local OptionsList = CreateInstance("UIListLayout", {Parent = OptionsFrame})
-
-			for _, opt in ipairs(dropdownConfig.Options or {}) do
-				local OptBtn = CreateInstance("TextButton", {
-					Size = UDim2.new(1, 0, 0, 20),
-					BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+			
+			local btn = Create("TextButton", {
+				Size = UDim2.new(1, 0, 1, 0),
+				BackgroundTransparency = 1,
+				Text = btnCfg.Name or "Button",
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				Font = Enum.Font.ArialBold,
+				TextSize = 10,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Parent = row
+			})
+			Create("UIPadding", {PaddingLeft = UDim.new(0, 6), Parent = btn})
+			
+			btn.MouseButton1Click:Connect(function()
+				if btnCfg.Callback then btnCfg.Callback() end
+			end)
+			
+			return {}
+		end
+		
+		function panel:CreateToggle(togCfg)
+			local tog = {Value = togCfg.CurrentValue or false}
+			
+			local row = Create("Frame", {
+				Size = UDim2.new(1, 0, 0, 16),
+				BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+				BorderSizePixel = 0,
+				Parent = scroll
+			})
+			
+			local label = Create("TextLabel", {
+				Size = UDim2.new(1, -24, 1, 0),
+				BackgroundTransparency = 1,
+				Text = togCfg.Name or "Toggle",
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				Font = Enum.Font.ArialBold,
+				TextSize = 10,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Parent = row
+			})
+			Create("UIPadding", {PaddingLeft = UDim.new(0, 6), Parent = label})
+			
+			local checkBox = Create("TextButton", {
+				Size = UDim2.new(0, 14, 0, 14),
+				Position = UDim2.new(1, -18, 0.5, -7),
+				BackgroundColor3 = Color3.fromRGB(45, 45, 45),
+				BorderSizePixel = 1,
+				BorderColor3 = Color3.fromRGB(70, 70, 70),
+				Text = "",
+				Parent = row
+			})
+			
+			local check = Create("TextLabel", {
+				Size = UDim2.new(1, 0, 1, 0),
+				BackgroundTransparency = 1,
+				Text = tog.Value and "✔" or "",
+				TextColor3 = Color3.fromRGB(0, 255, 100),
+				Font = Enum.Font.ArialBold,
+				TextSize = 12,
+				Parent = checkBox
+			})
+			
+			checkBox.MouseButton1Click:Connect(function()
+				tog.Value = not tog.Value
+				check.Text = tog.Value and "✔" or ""
+				if togCfg.Callback then togCfg.Callback(tog.Value) end
+			end)
+			
+			return tog
+		end
+		
+		function panel:CreateSlider(sCfg)
+			local slider = {Value = sCfg.CurrentValue or sCfg.Range[1]}
+			
+			local row = Create("Frame", {
+				Size = UDim2.new(1, 0, 0, 22),
+				BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+				BorderSizePixel = 0,
+				Parent = scroll
+			})
+			
+			local label = Create("TextLabel", {
+				Size = UDim2.new(1, 0, 0, 12),
+				BackgroundTransparency = 1,
+				Text = (sCfg.Name or "Slider") .. ": " .. tostring(math.floor(slider.Value)),
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				Font = Enum.Font.ArialBold,
+				TextSize = 9,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Parent = row
+			})
+			Create("UIPadding", {PaddingLeft = UDim.new(0, 6), Parent = label})
+			
+			local barBG = Create("Frame", {
+				Size = UDim2.new(1, -12, 0, 3),
+				Position = UDim2.new(0, 6, 1, -9),
+				BackgroundColor3 = Color3.fromRGB(55, 55, 55),
+				BorderSizePixel = 0,
+				Parent = row
+			})
+			
+			local fill = Create("Frame", {
+				Size = UDim2.new(0.5, 0, 1, 0),
+				BackgroundColor3 = Color3.fromRGB(235, 48, 97),
+				BorderSizePixel = 0,
+				Parent = barBG
+			})
+			
+			local knob = Create("Frame", {
+				Size = UDim2.new(0, 9, 0, 9),
+				Position = UDim2.new(0.5, -4.5, 0.5, -4.5),
+				BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+				BorderSizePixel = 0,
+				Parent = barBG
+			})
+			
+			local dragging = false
+			
+			local function update(val)
+				val = math.clamp(val, sCfg.Range[1], sCfg.Range[2])
+				slider.Value = val
+				label.Text = (sCfg.Name or "Slider") .. ": " .. tostring(math.floor(val))
+				local percent = (val - sCfg.Range[1]) / (sCfg.Range[2] - sCfg.Range[1])
+				fill.Size = UDim2.new(percent, 0, 1, 0)
+				knob.Position = UDim2.new(percent, -4.5, 0.5, -4.5)
+				if sCfg.Callback then sCfg.Callback(val) end
+			end
+			
+			barBG.InputBegan:Connect(function(inp)
+				if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+					dragging = true
+					local rel = (inp.Position.X - barBG.AbsolutePosition.X) / barBG.AbsoluteSize.X
+					update(sCfg.Range[1] + (sCfg.Range[2] - sCfg.Range[1]) * rel)
+				end
+			end)
+			
+			UserInputService.InputEnded:Connect(function(inp)
+				if inp.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+			end)
+			
+			UserInputService.InputChanged:Connect(function(inp)
+				if dragging and inp.UserInputType == Enum.UserInputType.MouseMovement then
+					local rel = math.clamp((inp.Position.X - barBG.AbsolutePosition.X) / barBG.AbsoluteSize.X, 0, 1)
+					update(sCfg.Range[1] + (sCfg.Range[2] - sCfg.Range[1]) * rel)
+				end
+			end)
+			
+			update(slider.Value)
+			return slider
+		end
+		
+		function panel:CreateDropdown(dCfg)
+			local drop = {Value = dCfg.CurrentOption or dCfg.Options[1]}
+			
+			local row = Create("Frame", {
+				Size = UDim2.new(1, 0, 0, 16),
+				BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+				BorderSizePixel = 0,
+				Parent = scroll
+			})
+			
+			local btn = Create("TextButton", {
+				Size = UDim2.new(1, 0, 1, 0),
+				BackgroundTransparency = 1,
+				Text = (dCfg.Name or "Dropdown") .. ": " .. drop.Value,
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				Font = Enum.Font.ArialBold,
+				TextSize = 10,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Parent = row
+			})
+			Create("UIPadding", {PaddingLeft = UDim.new(0, 6), Parent = btn})
+			
+			local expanded = false
+			local optionsContainer = Create("Frame", {
+				Size = UDim2.new(1, 0, 0, 0),
+				Position = UDim2.new(0, 0, 1, 0),
+				BackgroundColor3 = Color3.fromRGB(28, 28, 28),
+				BorderSizePixel = 1,
+				BorderColor3 = Color3.fromRGB(60, 60, 60),
+				Visible = false,
+				ZIndex = 5,
+				Parent = row
+			})
+			
+			local optList = Create("UIListLayout", {Padding = UDim.new(0, 1), Parent = optionsContainer})
+			
+			for _, opt in ipairs(dCfg.Options or {}) do
+				local optBtn = Create("TextButton", {
+					Size = UDim2.new(1, 0, 0, 15),
+					BackgroundColor3 = Color3.fromRGB(35, 35, 35),
 					Text = opt,
-					TextColor3 = Color3.new(1, 1, 1),
-					Font = Enum.Font.GothamSemibold,
-					TextSize = 13,
-					Parent = OptionsFrame
+					TextColor3 = Color3.fromRGB(255, 255, 255),
+					Font = Enum.Font.ArialBold,
+					TextSize = 10,
+					Parent = optionsContainer
 				})
-
-				OptBtn.MouseButton1Click:Connect(function()
-					DropdownObj.Current = opt
-					DropButton.Text = dropdownConfig.Name .. ": " .. opt
-					OptionsFrame.Visible = false
-					if dropdownConfig.Callback then
-						dropdownConfig.Callback(opt)
-					end
+				optBtn.MouseButton1Click:Connect(function()
+					drop.Value = opt
+					btn.Text = (dCfg.Name or "Dropdown") .. ": " .. opt
+					optionsContainer.Visible = false
+					expanded = false
+					if dCfg.Callback then dCfg.Callback(opt) end
 				end)
 			end
-
-			DropButton.MouseButton1Click:Connect(function()
-				OptionsFrame.Visible = not OptionsFrame.Visible
-				OptionsFrame.Size = UDim2.new(1, 0, 0, OptionsList.AbsoluteContentSize.Y)
+			
+			btn.MouseButton1Click:Connect(function()
+				expanded = not expanded
+				optionsContainer.Visible = expanded
+				optionsContainer.Size = UDim2.new(1, 0, 0, optList.AbsoluteContentSize.Y)
 			end)
-
-			return DropdownObj
+			
+			return drop
 		end
-
-		function Panel:CreateKeybind(kbConfig)
-			local KBObj = {CurrentKey = kbConfig.CurrentKeybind or Enum.KeyCode.F}
-
-			local KBFrame = CreateInstance("Frame", {
-				Size = UDim2.new(1, 0, 0, 22),
-				BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+		
+		function panel:CreateKeybind(kbCfg)
+			local kb = {CurrentKey = kbCfg.CurrentKeybind or Enum.KeyCode.F}
+			
+			local row = Create("Frame", {
+				Size = UDim2.new(1, 0, 0, 16),
+				BackgroundColor3 = Color3.fromRGB(30, 30, 30),
 				BorderSizePixel = 0,
-				Parent = ScrollFrame
+				Parent = scroll
 			})
-
-			local KBLabel = CreateInstance("TextLabel", {
+			
+			local label = Create("TextLabel", {
 				Size = UDim2.new(0.6, 0, 1, 0),
 				BackgroundTransparency = 1,
-				Text = kbConfig.Name or "Keybind",
-				TextColor3 = Color3.new(1, 1, 1),
-				Font = Enum.Font.GothamSemibold,
-				TextSize = 13,
+				Text = kbCfg.Name or "Keybind",
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				Font = Enum.Font.ArialBold,
+				TextSize = 10,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				Parent = KBFrame
+				Parent = row
 			})
-
-			CreateInstance("UIPadding", {PaddingLeft = UDim.new(0, 6), Parent = KBLabel})
-
-			local KeyButton = CreateInstance("TextButton", {
+			Create("UIPadding", {PaddingLeft = UDim.new(0, 6), Parent = label})
+			
+			local keyBtn = Create("TextButton", {
 				Size = UDim2.new(0.4, 0, 1, 0),
 				Position = UDim2.new(0.6, 0, 0, 0),
-				BackgroundColor3 = Color3.fromRGB(50, 50, 50),
-				Text = KBObj.CurrentKey.Name,
-				TextColor3 = Color3.new(1, 1, 1),
-				Font = Enum.Font.GothamSemibold,
-				TextSize = 13,
-				Parent = KBFrame
+				BackgroundColor3 = Color3.fromRGB(45, 45, 45),
+				Text = kb.CurrentKey.Name,
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				Font = Enum.Font.ArialBold,
+				TextSize = 10,
+				Parent = row
 			})
-
+			
 			local listening = false
-
-			KeyButton.MouseButton1Click:Connect(function()
+			
+			keyBtn.MouseButton1Click:Connect(function()
 				listening = true
-				KeyButton.Text = "..."
+				keyBtn.Text = "..."
 			end)
-
-			UserInputService.InputBegan:Connect(function(input, gp)
+			
+			local conn
+			conn = UserInputService.InputBegan:Connect(function(input, gp)
 				if listening and not gp and input.UserInputType == Enum.UserInputType.Keyboard then
-					KBObj.CurrentKey = input.KeyCode
-					KeyButton.Text = input.KeyCode.Name
+					kb.CurrentKey = input.KeyCode
+					keyBtn.Text = input.KeyCode.Name
 					listening = false
-					if kbConfig.Callback then
-						kbConfig.Callback()
-					end
+					if kbCfg.Callback then kbCfg.Callback() end
 				end
 			end)
-
-			return KBObj
+			
+			return kb
 		end
-
-		return Panel
+		
+		return panel
 	end
-
-	return Window
+	
+	return window
 end
 
 return Library
